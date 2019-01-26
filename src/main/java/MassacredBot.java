@@ -116,8 +116,7 @@ public class MassacredBot extends TelegramLongPollingBot {
                 addAsTrigger(update);
             } else if (update.getMessage().getText() == null && update.getMessage().getCaption().startsWith("/add photo")) {
                 addPhoto(update);
-            }
-            else {
+            } else {
                 sendMessage("Command isn't recognised", update.getMessage().getChatId());
             }
 
@@ -226,7 +225,7 @@ public class MassacredBot extends TelegramLongPollingBot {
      * Method sends warning in group chat and adds 1 warning to number of user's warnings.
      * User will be banned for 1 day if he gets 4 warnings.
      *
-     * @param update contains message text.
+     * @param update        contains message text.
      * @param forbiddenWord forbidden word to display in warning.
      */
     private void warnSwearingUser(Update update, String forbiddenWord) {
@@ -273,7 +272,7 @@ public class MassacredBot extends TelegramLongPollingBot {
     /**
      * Method to send message in group.
      *
-     * @param text what text to send.
+     * @param text   what text to send.
      * @param chatId where to send.
      */
     private void sendMessage(String text, long chatId) {
@@ -291,7 +290,7 @@ public class MassacredBot extends TelegramLongPollingBot {
      * Method to send photo in group.
      *
      * @param photoSize what photo to send.
-     * @param chatId where to send.
+     * @param chatId    where to send.
      */
     private void sendPhoto(@NotNull PhotoSize photoSize, long chatId) {
         SendPhoto sendPhoto = new SendPhoto();
