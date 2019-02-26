@@ -261,10 +261,10 @@ public class MassacredBot extends TelegramLongPollingBot {
      */
     private void banUser(@NotNull Update update) throws TelegramApiException {
         int date = (int) (new Date().getTime() / 1000) + (86400);
-        KickChatMember kickChatMember = new KickChatMember();
-        kickChatMember.setChatId(update.getMessage().getChatId());
-        kickChatMember.setUserId(update.getMessage().getFrom().getId());
-        kickChatMember.setUntilDate(date);
+        KickChatMember kickChatMember = new KickChatMember()
+                .setChatId(update.getMessage().getChatId())
+                .setUserId(update.getMessage().getFrom().getId())
+                .setUntilDate(date);
 
         sendApiMethod(kickChatMember);
     }
@@ -276,9 +276,9 @@ public class MassacredBot extends TelegramLongPollingBot {
      * @param chatId where to send.
      */
     private void sendMessage(String text, long chatId) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(text);
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(chatId)
+                .setText(text);
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
@@ -293,9 +293,9 @@ public class MassacredBot extends TelegramLongPollingBot {
      * @param chatId    where to send.
      */
     private void sendPhoto(@NotNull PhotoSize photoSize, long chatId) {
-        SendPhoto sendPhoto = new SendPhoto();
-        sendPhoto.setChatId(chatId);
-        sendPhoto.setPhoto(photoSize.getFileId());
+        SendPhoto sendPhoto = new SendPhoto()
+                .setChatId(chatId)
+                .setPhoto(photoSize.getFileId());
         try {
             execute(sendPhoto);
         } catch (TelegramApiException e) {
@@ -308,13 +308,15 @@ public class MassacredBot extends TelegramLongPollingBot {
      *
      * @param update contains first name, last name, user name and user id.
      */
-    private void addUser(@org.jetbrains.annotations.NotNull Update update) {
+    private void addUser(Update update) {
         User user = new User();
         user.setUserId(update.getMessage().getFrom().getId());
         user.setFirstName(update.getMessage().getFrom().getFirstName());
         user.setLastName(update.getMessage().getFrom().getLastName());
         user.setUsername(update.getMessage().getFrom().getUserName());
-        users.add(user);
+        if(!users.contains(user)) {
+            users.add(user);
+        }
 
     }
 
