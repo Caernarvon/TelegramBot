@@ -1,5 +1,6 @@
+package services;
+
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -11,36 +12,34 @@ import org.telegram.telegrambots.meta.api.objects.ChatMember;
 import org.telegram.telegrambots.meta.api.objects.PhotoSize;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import resources.PhotoTriggerEntity;
+import resources.UserEntity;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
+import static constants.Properties.BOT_NAME;
+import static constants.Properties.BOT_TOKEN;
 import static org.telegram.abilitybots.api.util.AbilityUtils.getChatId;
 
 public class MassacredBot extends TelegramLongPollingBot {
 
-    private static final String BOT_NAME = "";
-    private static final String TOKEN = "";
-
     /**
-     * List of users to keep warnings and users info.
+     * List of userEntities to keep warnings and userEntities info.
      */
-    private List<User> users = new ArrayList<>();
+    private List<UserEntity> userEntities = new ArrayList<>();
 
     /**
-     * List of users to keep swear words.
+     * List of userEntities to keep swear words.
      */
     private List<String> swearWords = new ArrayList<>();
 
     /**
      * List of photo to show when user triggers it.
      */
-    private List<PhotoTrigger> photoTriggers = new ArrayList<>();
+    private List<PhotoTriggerEntity> photoTriggerEntities = new ArrayList<>();
 
-    MassacredBot(DefaultBotOptions botOptions) {
+    public MassacredBot(DefaultBotOptions botOptions) {
         super(botOptions);
     }
 
@@ -49,6 +48,9 @@ public class MassacredBot extends TelegramLongPollingBot {
      * Method receives updates to process them later.
      */
     public void onUpdateReceived(Update update) {
+        if (!findUser(update).isPresent()) {
+            addUser(update);
+        }
 
         /*
          * New message received.
@@ -75,7 +77,7 @@ public class MassacredBot extends TelegramLongPollingBot {
             }
         }
         /*
-         * User joins group and receives welcome message and list of rules.
+         * resources.UserEntity joins group and receives welcome message and list of rules.
          */
         else if (!update.getMessage().getNewChatMembers().isEmpty()) {
             printWelcomeMessage(update);
@@ -105,7 +107,7 @@ public class MassacredBot extends TelegramLongPollingBot {
     }
 
     /**
-     * Method processes commands. Allows to divide users and admins when processing
+     * Method processes commands. Allows to divide userEntities and admins when processing
      * commands. Users can't add new triggers.
      *
      * @param update contains message text or caption text.
@@ -151,14 +153,16 @@ public class MassacredBot extends TelegramLongPollingBot {
      * @param update contains photo and caption.
      */
     private void addPhoto(@NotNull Update update) {
-
-        PhotoTrigger photoTrigger = new PhotoTrigger();
-        for (PhotoSize photo : update.getMessage().getPhoto()) {
-            photoTrigger.setPhoto(photo);
-            photoTrigger.setTriggerText(update.getMessage().getCaption().substring(10).trim());
+        PhotoTriggerEntity photoTriggerEntity = new PhotoTriggerEntity();
+        update.getMessage().getPhoto().stream().forEach(photo -> {
+                    photoTriggerEntity.setPhoto(photo);
+                    photoTriggerEntity.setTriggerText(update.getMessage().getCaption().substring(10).trim());
+                }
+        );
+        if (!photoTriggerEntities.contains(photoTriggerEntity)) {
+            photoTriggerEntities.add(photoTriggerEntity);
+            sendMessage("Photo added successfully", update.getMessage().getChatId());
         }
-        photoTriggers.add(photoTrigger);
-        sendMessage("Photo added successfully", update.getMessage().getChatId());
     }
 
     /**
@@ -167,9 +171,11 @@ public class MassacredBot extends TelegramLongPollingBot {
      * @param update contains swear word.
      */
     private void addSwearWord(@NotNull Update update) {
-        swearWords.add(update.getMessage().getText().substring(15).trim());
-        sendMessage("'" + update.getMessage().getText().substring(15).trim() + "' is added as swear word",
-                update.getMessage().getChatId());
+        if (!swearWords.contains(update.getMessage().getText().substring(15).trim())) {
+            swearWords.add(update.getMessage().getText().substring(15).trim());
+            sendMessage("'" + update.getMessage().getText().substring(15).trim() + "' is added as swear word",
+                    update.getMessage().getChatId());
+        }
     }
 
     /**
@@ -195,9 +201,9 @@ public class MassacredBot extends TelegramLongPollingBot {
      * @param update contains message text.
      */
     private void checkAtPhotoTrigger(Update update) {
-        for (PhotoTrigger photoTrigger : photoTriggers) {
-            if (update.getMessage().getText().contains(photoTrigger.getTriggerText())) {
-                sendPhoto(photoTrigger.getPhoto(), update.getMessage().getChatId());
+        for (PhotoTriggerEntity photoTriggerEntity : photoTriggerEntities) {
+            if (update.getMessage().getText().contains(photoTriggerEntity.getTriggerText())) {
+                sendPhoto(photoTriggerEntity.getPhoto(), update.getMessage().getChatId());
             }
         }
     }
@@ -209,49 +215,48 @@ public class MassacredBot extends TelegramLongPollingBot {
      * @param update contains message text.
      */
     private void checkAtSwearing(Update update) {
-        for (String forbiddenWord : swearWords) {
-            if (update.getMessage().getText().contains(forbiddenWord)) {
-                if (findUser(update) != null) {
-                    warnSwearingUser(update, forbiddenWord);
-                } else {
-                    addUser(update);
-                    warnSwearingUser(update, forbiddenWord);
-                }
+        swearWords.stream().forEach(swearWord -> {
+            if (update.getMessage().getText().contains(swearWord)) {
+                findUser(update).ifPresent(userEntity -> {
+                    warnSwearingUser(update, swearWord);
+                });
             }
-        }
+        });
     }
 
     /**
      * Method sends warning in group chat and adds 1 warning to number of user's warnings.
-     * User will be banned for 1 day if he gets 4 warnings.
+     * resources.UserEntity will be banned for 1 day if he gets 4 warnings.
      *
      * @param update        contains message text.
      * @param forbiddenWord forbidden word to display in warning.
      */
     private void warnSwearingUser(Update update, String forbiddenWord) {
-        Objects.requireNonNull(findUser(update)).setWarnings(Objects.requireNonNull(findUser(update)).getWarnings() + 1);
-        if (Objects.requireNonNull(findUser(update)).getWarnings() == 4) {
-            users.remove(findUser(update));
-            sendMessage("User banned for 1 day", update.getMessage().getChatId());
-            try {
-                banUser(update);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-        } else {
-            String numOfWarnings;
-            if (Objects.requireNonNull(findUser(update)).getWarnings() == 1) {
-                numOfWarnings = "st";
-            } else if (Objects.requireNonNull(findUser(update)).getWarnings() == 2) {
-                numOfWarnings = "nd";
-            } else if (Objects.requireNonNull(findUser(update)).getWarnings() == 3) {
-                numOfWarnings = "rd";
+        findUser(update).ifPresent(userEntity -> {
+            userEntity.setWarnings(userEntity.getWarnings() + 1);
+            if (userEntity.getWarnings() == 4) {
+                userEntities.remove(userEntity);
+                sendMessage("User banned for 1 day", update.getMessage().getChatId());
+                try {
+                    banUser(update);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
             } else {
-                numOfWarnings = "th";
+                String numOfWarnings;
+                if (userEntity.getWarnings() == 1) {
+                    numOfWarnings = "st";
+                } else if (userEntity.getWarnings() == 2) {
+                    numOfWarnings = "nd";
+                } else if (userEntity.getWarnings() == 3) {
+                    numOfWarnings = "rd";
+                } else {
+                    numOfWarnings = "th";
+                }
+                sendMessage(MessageFormat.format("Word ''{0}'' is forbidden, {1}{2} warning!", forbiddenWord,
+                        userEntity.getWarnings(), numOfWarnings), update.getMessage().getChatId());
             }
-            sendMessage(MessageFormat.format("Word ''{0}'' is forbidden, {1}{2} warning!", forbiddenWord,
-                    Objects.requireNonNull(findUser(update)).getWarnings(), numOfWarnings), update.getMessage().getChatId());
-        }
+        });
     }
 
     /**
@@ -304,18 +309,18 @@ public class MassacredBot extends TelegramLongPollingBot {
     }
 
     /**
-     * Method to add users to users list. Used to help to keep user's warnings.
+     * Method to add userEntities to userEntities list. Used to help to keep user's warnings.
      *
      * @param update contains first name, last name, user name and user id.
      */
     private void addUser(Update update) {
-        User user = new User();
-        user.setUserId(update.getMessage().getFrom().getId());
-        user.setFirstName(update.getMessage().getFrom().getFirstName());
-        user.setLastName(update.getMessage().getFrom().getLastName());
-        user.setUsername(update.getMessage().getFrom().getUserName());
-        if(!users.contains(user)) {
-            users.add(user);
+        UserEntity userEntity = new UserEntity();
+        userEntity.setUserId(update.getMessage().getFrom().getId());
+        userEntity.setFirstName(update.getMessage().getFrom().getFirstName());
+        userEntity.setLastName(update.getMessage().getFrom().getLastName());
+        userEntity.setUsername(update.getMessage().getFrom().getUserName());
+        if (!userEntities.contains(userEntity)) {
+            userEntities.add(userEntity);
         }
 
     }
@@ -325,18 +330,11 @@ public class MassacredBot extends TelegramLongPollingBot {
      *
      * @param update contains user id.
      */
-    @Nullable
-    private User findUser(Update update) {
-        if (!users.isEmpty()) {
-            for (User user : users) {
-                if (user.getUserId().equals(update.getMessage().getFrom().getId())) {
-                    return user;
-                }
-            }
-            return null;
-        } else {
-            return null;
-        }
+    @NotNull
+    private Optional<UserEntity> findUser(Update update) {
+        return userEntities.stream()
+                .filter(userEntity -> userEntity.getUserId().equals(update.getMessage().getFrom().getId()))
+                .findFirst();
     }
 
     @Override
@@ -346,6 +344,6 @@ public class MassacredBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return TOKEN;
+        return BOT_TOKEN;
     }
 }

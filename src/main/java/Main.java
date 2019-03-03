@@ -5,6 +5,10 @@ import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.meta.ApiContext;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import services.MassacredBot;
+
+import static constants.Properties.PROXY_HOST;
+import static constants.Properties.PROXY_PORT;
 
 public class Main {
 
@@ -20,8 +24,6 @@ public class Main {
              * Setting up Http proxy.
              */
             DefaultBotOptions botOptions = ApiContext.getInstance(DefaultBotOptions.class);
-            final String PROXY_HOST = "24.225.1.149";
-            final Integer PROXY_PORT = 8080;
             HttpHost httpHost = new HttpHost(PROXY_HOST, PROXY_PORT);
 
             RequestConfig requestConfig = RequestConfig.custom().setProxy(httpHost).setAuthenticationEnabled(false).build();

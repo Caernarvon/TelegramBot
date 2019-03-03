@@ -1,25 +1,27 @@
+package resources;
+
 import org.telegram.telegrambots.meta.api.objects.PhotoSize;
 
 /**
  * Class associates photo with text.
  */
-class PhotoTrigger {
+public class PhotoTriggerEntity {
     private PhotoSize photo;
     private String triggerText;
 
-    PhotoSize getPhoto() {
+    public PhotoSize getPhoto() {
         return photo;
     }
 
-    void setPhoto(PhotoSize photo) {
+    public void setPhoto(PhotoSize photo) {
         this.photo = photo;
     }
 
-    String getTriggerText() {
+    public String getTriggerText() {
         return triggerText;
     }
 
-    void setTriggerText(String triggerText) {
+    public void setTriggerText(String triggerText) {
         this.triggerText = triggerText;
     }
 }

@@ -1,23 +1,24 @@
+package resources;
 
 /**
  * Class contains info about users.
  */
-public class User {
+public class UserEntity {
     private String firstName;
     private String lastName;
     private String username;
     private Integer userId;
     private int warnings;
 
-    User() {
+    public UserEntity() {
         this.warnings = 0;
     }
 
-    int getWarnings() {
+    public int getWarnings() {
         return warnings;
     }
 
-    void setWarnings(int warnings) {
+    public void setWarnings(int warnings) {
         this.warnings = warnings;
     }
 
@@ -25,7 +26,7 @@ public class User {
         return firstName;
     }
 
-    void setFirstName(String firstName) {
+    public void setFirstName(String firstName) {
         this.firstName = firstName;
     }
 
@@ -33,7 +34,7 @@ public class User {
         return lastName;
     }
 
-    void setLastName(String lastName) {
+    public void setLastName(String lastName) {
         this.lastName = lastName;
     }
 
@@ -41,21 +42,21 @@ public class User {
         return username;
     }
 
-    void setUsername(String username) {
+    public void setUsername(String username) {
         this.username = username;
     }
 
-    Integer getUserId() {
+    public Integer getUserId() {
         return userId;
     }
 
-    void setUserId(Integer userId) {
+    public void setUserId(Integer userId) {
         this.userId = userId;
     }
 
     @Override
     public String toString() {
-        return "User{" +
+        return "resources.UserEntity{" +
                 "firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", username='" + username + '\'' +
